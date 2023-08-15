@@ -134,7 +134,7 @@ def combine_mols(mol1, mol2, res_name_1="RU0", res_name_2="RU0"):
 
 def simple_cell(mol, n, density=0.03):
     """
-    Simple unit cell generator for single component system based on density
+    Simple unit cell generator for solvent system based on density
 
     Args:
         mol: RDkit Mol object
