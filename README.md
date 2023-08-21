@@ -41,4 +41,9 @@ python run_md.py
 ### Step 5. Sampling  
 松开端点原子，以300K，压力为1 atm的条件以同样的时间步长模拟500,000步的NPT并进行各种性质的计算。
 
+### Reference
+Kangjie LYU, Yanqiu PENG, Li XIAO, Juntao LU, Lin ZHUANG. Atomistic Understanding of the Peculiar Dissolution Behavior of Alkaline Polymer Electrolytes in Alcohol/Water Mixed Solvents. _Acta Phys. -Chim. Sin._, 2019, Vol. 35, Issue (4): 378-384. doi: [10.3866/PKU.WHXB201805031](https://doi.org/10.3866/PKU.WHXB201805031)
+
+Yoshihiro Hayashi, Junichiro Shiomi, Junko Morikawa & Ryo Yoshida. RadonPy: automated physical property calculation using all-atom classical molecular dynamics simulations for polymer informatics. _npj Computational Materials_, volume 8, Article number: 222 (2022). [Cite this article]([https://doi.org/文章的DOI](https://doi.org/10.1038/s41524-022-00906-4)https://doi.org/10.1038/s41524-022-00906-4)
+
 
