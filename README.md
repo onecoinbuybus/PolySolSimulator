@@ -18,6 +18,8 @@ git clone https://github.com/onecoinbuybus/PolySolSimulator/
 cd PolySolSimulator
 python run_md.py
 ```
+Firstly a file named "test_run" will be created.The solvent cell of actone will be automatically generated, and then combined with polystyrern to form a mixed cell for EMD simulation  
+
 ## Advanced Usage
 ```python
 
