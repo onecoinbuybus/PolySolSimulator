@@ -53,41 +53,19 @@ python make_solvent.py ./config/make_sol.yaml "C1CCCCC1"
 - `solvent_smiles`: 溶剂分子的smiles
 ### 3. Execute Quick Molecular Dynamics 
 
-这个脚本可以执行快速的分子动力学模拟，主要用于混合物体系。以下是详细步骤:
+这个脚本用于制作高分子-溶剂混合盒子并进行模拟以及抽样计算。可以通过以下命令执行快速MD模拟:
 
-1. **准备**: 确定工作目录并加载单体和溶剂的JSON文件。
-2. **电荷赋值**: 为终端分子赋予适当的电荷。
-3. **聚合**: 根据指定的链长进行聚合，并对聚合物进行终端修饰。
-4. **混合模拟**: 将聚合物与平衡溶剂混合，并执行指定的模拟协议。
-5. **采样模拟**: 执行进一步的模拟采样。
-
-可以通过以下命令执行快速MD模拟:
-
-\`\`\`bash
+```bash
 python quick_md.py poly30_ethanol 30 -in_monomer ps.json -in_esol ethanol.json
-\`\`\`
+```
 
 下面是可用的命令行参数及其描述：
 - `main_work_path`: 主工作目录的路径。
 - `chain_length`: 聚合物的链长。
 - `-in_monomer`: 单体JSON文件的路径。
 - `-in_esol`: 平衡溶剂JSON文件的路径。
-- `-protocol`: 模拟协议，默认为"md1"。
-- `-min_dist_threshold`: 最小距离阈值，默认为10。
-
-以下是一些命令行示例，演示了不同的参数用法：
-\`\`\`bash
-# Example 1:
-python quick_md.py poly30_ethanol 30 -in_monomer ps.json -in_esol ethanol.json
-
-# Example 2:
-python quick_md.py poly50_water 50 -in_monomer ps.json -in_esol water.json
-\`\`\`
-
-
-
-
-
+- `-protocol`: 模拟协议，md1: 8步的压缩与解压缩。md2: 保持压力与温度进行模拟。默认为"md1"。  
+- `-min_dist_threshold`: 初始高分子与溶剂间的最小距离阈值，默认为10。
 
 ## Details of Simulation
 
