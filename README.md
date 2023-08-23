@@ -40,6 +40,54 @@ python mol_gen.py "*C(C*)c1ccccc1" -dir "test_run" -out "ps.json"
 - `-charge`: 电荷类型，默认为"RESP"。
 
 ### 2. Make solvent
+创建溶剂盒子并进行预平衡。可以指定溶剂分子，电荷以及密度。此过程包括以下步骤:  
+1. **构象搜索**: 使用RDKit搜索溶剂分子的合适构象。
+2. **电荷赋值**: 使用psi4对溶剂分子的电荷进行计算。
+3. **创建溶剂单元**: 根据指定的分子数量和密度，创建一个无定型或简单的溶剂单元。
+溶剂盒子可用以下命令创建：
+```bash
+python make_solvent.py ./config/make_sol.yaml "C1CCCCC1"
+```
+下面是命令的具体描述
+- `config_file`: YAML配置文件路径，其中包括OMP线程数、MPI进程数、GPU使用量、内存、溶剂分子数量、密度和盒子类型等参数。
+- `solvent_smiles`: 溶剂分子的smiles
+### 3. Execute Quick Molecular Dynamics 
+
+这个脚本可以执行快速的分子动力学模拟，主要用于混合物体系。以下是详细步骤:
+
+1. **准备**: 确定工作目录并加载单体和溶剂的JSON文件。
+2. **电荷赋值**: 为终端分子赋予适当的电荷。
+3. **聚合**: 根据指定的链长进行聚合，并对聚合物进行终端修饰。
+4. **混合模拟**: 将聚合物与平衡溶剂混合，并执行指定的模拟协议。
+5. **采样模拟**: 执行进一步的模拟采样。
+
+可以通过以下命令执行快速MD模拟:
+
+\`\`\`bash
+python quick_md.py poly30_ethanol 30 -in_monomer ps.json -in_esol ethanol.json
+\`\`\`
+
+下面是可用的命令行参数及其描述：
+- `main_work_path`: 主工作目录的路径。
+- `chain_length`: 聚合物的链长。
+- `-in_monomer`: 单体JSON文件的路径。
+- `-in_esol`: 平衡溶剂JSON文件的路径。
+- `-protocol`: 模拟协议，默认为"md1"。
+- `-min_dist_threshold`: 最小距离阈值，默认为10。
+
+以下是一些命令行示例，演示了不同的参数用法：
+\`\`\`bash
+# Example 1:
+python quick_md.py poly30_ethanol 30 -in_monomer ps.json -in_esol ethanol.json
+
+# Example 2:
+python quick_md.py poly50_water 50 -in_monomer ps.json -in_esol water.json
+\`\`\`
+
+
+
+
+
 
 ## Details of Simulation
 
@@ -59,6 +107,8 @@ python mol_gen.py "*C(C*)c1ccccc1" -dir "test_run" -out "ps.json"
 
 ### Step 5. Sampling  
 松开端点原子，以300K，压力为1 atm的条件以同样的时间步长模拟500,000步的NPT并进行各种性质的计算。
+
+## Result
 
 ### Reference
 Kangjie LYU, Yanqiu PENG, Li XIAO, Juntao LU, Lin ZHUANG. Atomistic Understanding of the Peculiar Dissolution Behavior of Alkaline Polymer Electrolytes in Alcohol/Water Mixed Solvents. _Acta Phys. -Chim. Sin._, 2019, Vol. 35, Issue (4): 378-384. doi: [10.3866/PKU.WHXB201805031](https://doi.org/10.3866/PKU.WHXB201805031)
