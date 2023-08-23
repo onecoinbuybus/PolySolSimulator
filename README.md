@@ -30,7 +30,7 @@ Firstly a file named "test_run" will be created.The solvent cell of actone will 
 可以通过以下命令创建monomer:
 
 ```bash
-
+python mol_gen.py "*C(C*)c1ccccc1" -dir "test_run" -out "ps.json"
 ```
 下面是可用的命令以及描述:
 下面是可用的命令行参数及其描述：
