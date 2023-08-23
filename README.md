@@ -21,9 +21,26 @@ python run_md.py
 Firstly a file named "test_run" will be created.The solvent cell of actone will be automatically generated, and then combined with polystyrene to form a mixed cell for EMD simulation  
 
 ## Advanced Usage
-```python
+### 1. Create monomer
+输入polymer smiles以及电荷种类，以下面步骤创建高分子单体:  
+1. **构象搜索**: 使用RDKit搜索分子的合适构象。
+2. **分子预处理**: 对分子进行预处理，建立trimer
+3. **电荷赋值**: 使用psi4对分子电荷（gasteiger, RESP, ESP, Mulliken, Lowdin）进行计算，提取trimer中间部分电荷，建立monomer
+
+可以通过以下命令创建monomer:
+
+```bash
 
 ```
+下面是可用的命令以及描述:
+下面是可用的命令行参数及其描述：
+- `smiles`: polymer smiles字符串
+- `-dir`: 工作目录名
+- `-out`: 输出文件名，用于保存生成的分子JSON文件。
+- `-charge`: 电荷类型，默认为"RESP"。
+
+### 2. Make solvent
+
 ## Details of Simulation
 
 ### Step 1. Monomer preparation  
