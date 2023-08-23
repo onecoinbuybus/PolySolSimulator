@@ -80,7 +80,7 @@ python quick_md.py poly30_ethanol 30 -in_monomer ps.json -in_esol ethanol.json
 
 ### Step 4. Simulation of polymer-solvent system  
 固定高分子的端点原子，使用NPT模拟了2,000,000步的混合物系统，步长为5fs。温度固定为300K，这里使用了并且比较了两个方案:
-  - 方案1: 将压强升高到100 atm之后解压到1atm。
+  - 方案1: 将压强升高到100atm之后解压到1atm。
   - 方案2: 保持压强为1直到模拟结束。
 
 ### Step 5. Sampling  
