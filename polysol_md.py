@@ -6,6 +6,9 @@ from radonpy.sim.lammps import MolFromLAMMPSdata
 from radonpy.sim.md import MD
 from datetime import datetime
 import numpy as np
+from rdkit import Chem
+from rdkit.Chem import AllChem
+import py3Dmol
 
 
 def make_work_dir(main_file_name):
@@ -20,6 +23,71 @@ def make_work_dir(main_file_name):
         print("Directory already exists.")
         return work_dir_path
 
+
+def visualization(mol):
+    """
+    Visualization of the molecule using py3Dmol
+
+    Args:
+        mol: RDKit Mol object with conformations
+    """
+    block = Chem.MolToMolBlock(mol)
+    viewer = py3Dmol.view(width=800, height=400)
+    viewer.addModel(block, format="sdf")
+    viewer.setStyle({'stick': {}})
+    viewer.zoomTo()
+    viewer.show()
+
+
+def rdkit_conformation_search(mol, nconf=1000, etkdg_ver=3, rmsthresh=0.7):
+    """
+    calc.conformation_search
+
+    Conformation search using RDKit
+
+    Args:
+        mol: RDKit Mol object
+        nconf: Number of generating conformations (int)
+        etkdg_ver: Version of ETKDG algorithm (int)
+        rmsthresh: RMS threshold for pruning conformations (float)
+
+    Returns:
+        RDKit Mol object
+        MM energy (ndarray, kcal/mol)
+    """
+
+    mol_c = Chem.Mol(mol)
+
+    if etkdg_ver == 3:
+        etkdg = AllChem.ETKDGv3()
+    elif etkdg_ver == 2:
+        etkdg = AllChem.ETKDGv2()
+    elif etkdg_ver == 1:
+        etkdg = AllChem.ETKDG()
+    else:
+        print('Illegal input of etkdg_ver = %s' % etkdg_ver)
+        return mol_c, []
+
+    etkdg.pruneRmsThresh = rmsthresh
+    AllChem.EmbedMultipleConfs(mol_c, nconf, etkdg)
+    nconf = mol_c.GetNumConformers()
+    print('%i conformers were generated.' % nconf)
+
+    energies = []
+
+    # Optimization conformers by MM
+    print('Start optimization of %i conformers by MM level.' % nconf)
+    prop = AllChem.MMFFGetMoleculeProperties(mol_c)
+
+    for i in range(nconf):
+        mmff = AllChem.MMFFGetMoleculeForceField(mol_c, prop, confId=i)
+        mmff.Minimize()
+        energies.append((mmff.CalcEnergy(), i))
+
+    # Sort by MM energy
+    energies.sort(key=lambda x: x[0])
+
+    return mol_c, energies
 
 class Poly_Sol_EMD:
     def __init__(
