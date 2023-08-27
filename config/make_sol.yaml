@@ -1,0 +1,10 @@
+omp_psi4: 30
+mpi: 30
+omp: 30
+gpu: 0
+mem: 100000
+num_molecules: 1000
+density: 0.05
+main_work_dir_name: "sol_ethanol"
+amorphous_cell: true
+simple_cell: false
