@@ -1,0 +1,42 @@
+log radon_md.log append
+units real
+atom_style full
+boundary p p p
+
+pair_style lj/charmm/coul/long 12.0 16.0
+kspace_style pppm 1e-6
+dielectric 1.000000
+bond_style harmonic
+angle_style harmonic
+dihedral_style fourier
+improper_style cvff
+special_bonds amber
+pair_modify mix arithmetic
+neighbor 2.0 bin
+neigh_modify delay 0 every 1 check yes
+read_data mix_cell_ini.data
+
+thermo_style custom step time temp press enthalpy etotal ke pe ebond eangle edihed eimp evdwl ecoul elong etail vol lx ly lz density pxx pyy pzz pxy pxz pyz
+thermo_modify flush yes
+thermo 1000
+
+group fixed_atoms id 1
+group rest_atoms subtract all fixed_atoms
+fix fix1 fixed_atoms setforce 0.0 0.0 0.0
+
+dump dump0 all custom 1000 poly_sol_npt.dump id type mol x y z ix iy iz vx vy vz
+dump xtc0 all xtc 1000 poly_sol.xtc
+dump_modify xtc0 unwrap yes
+restart 10000 radon_md_1.rst radon_md_2.rst
+
+timestep 0.005000
+
+# npt
+fix md1 all npt temp 300.000000 300.000000 100.000000 iso 1.000000 1.000000 500.000000 nreset 1000 
+
+run 2000000
+unfix md1
+
+write_dump all custom radon_md_last.dump id x y z xu yu zu vx vy vz fx fy fz modify sort id
+write_data poly_sol_last.data
+quit
