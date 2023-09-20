@@ -38,7 +38,7 @@ def visualization(mol):
     block = Chem.MolToMolBlock(mol)
     viewer = py3Dmol.view(width=800, height=400)
     viewer.addModel(block, format="sdf")
-    viewer.setStyle({'stick': {}})
+    viewer.setStyle({"stick": {}})
     viewer.zoomTo()
     viewer.show()
 
@@ -69,18 +69,18 @@ def rdkit_conformation_search(mol, nconf=1000, etkdg_ver=3, rmsthresh=0.7):
     elif etkdg_ver == 1:
         etkdg = AllChem.ETKDG()
     else:
-        print('Illegal input of etkdg_ver = %s' % etkdg_ver)
+        print("Illegal input of etkdg_ver = %s" % etkdg_ver)
         return mol_c, []
 
     etkdg.pruneRmsThresh = rmsthresh
     AllChem.EmbedMultipleConfs(mol_c, nconf, etkdg)
     nconf = mol_c.GetNumConformers()
-    print('%i conformers were generated.' % nconf)
+    print("%i conformers were generated." % nconf)
 
     energies = []
 
     # Optimization conformers by MM
-    print('Start optimization of %i conformers by MM level.' % nconf)
+    print("Start optimization of %i conformers by MM level." % nconf)
     prop = AllChem.MMFFGetMoleculeProperties(mol_c)
 
     for i in range(nconf):
@@ -92,6 +92,110 @@ def rdkit_conformation_search(mol, nconf=1000, etkdg_ver=3, rmsthresh=0.7):
     energies.sort(key=lambda x: x[0])
 
     return mol_c, energies
+
+
+def read_dump_last(filename):
+    """
+    Return:
+        Unwrapped atomic coordinates
+        Wrapped atomic coordinates
+        Cell lengths
+        Atomic velocities
+        Force on atoms
+    """
+
+    with open(filename, "r") as fh:
+        lines = [s.replace("\n", "").replace("\r", "") for s in fh.readlines()]
+
+    flag_cell = False
+    flag_atoms = False
+    cell = []
+    atoms = []
+    for line in lines:
+        if line == "":
+            continue
+        elif "ITEM: TIMESTEP" in line:
+            flag_cell = False
+            flag_atoms = False
+        elif "ITEM: BOX BOUNDS" in line:
+            pbc = line.split(" ")[3:]
+            flag_cell = True
+            flag_atoms = False
+        elif "ITEM: ATOMS" in line:
+            atoms_column = line.split(" ")[2:]
+            flag_cell = False
+            flag_atoms = True
+        elif flag_cell:
+            cell.append([float(f) for f in line.split(" ")])
+        elif flag_atoms:
+            atoms.append(line.split(" "))
+
+    if "id" in atoms_column:
+        id_idx = atoms_column.index("id")
+    else:
+        return False
+    x_idx = atoms_column.index("x") if "x" in atoms_column else None
+    y_idx = atoms_column.index("y") if "y" in atoms_column else None
+    z_idx = atoms_column.index("z") if "z" in atoms_column else None
+    xu_idx = atoms_column.index("xu") if "xu" in atoms_column else None
+    yu_idx = atoms_column.index("yu") if "yu" in atoms_column else None
+    zu_idx = atoms_column.index("zu") if "zu" in atoms_column else None
+    vx_idx = atoms_column.index("vx") if "vx" in atoms_column else None
+    vy_idx = atoms_column.index("vy") if "vy" in atoms_column else None
+    vz_idx = atoms_column.index("vz") if "vz" in atoms_column else None
+    fx_idx = atoms_column.index("fx") if "fx" in atoms_column else None
+    fy_idx = atoms_column.index("fy") if "fy" in atoms_column else None
+    fz_idx = atoms_column.index("fz") if "fz" in atoms_column else None
+
+    num = len(atoms)
+    uwstr = np.array([[0] * 3 for i in range(num)], dtype=float)
+    wstr = np.array([[0] * 3 for i in range(num)], dtype=float)
+    v = np.array([[0] * 3 for i in range(num)], dtype=float)
+    f = np.array([[0] * 3 for i in range(num)], dtype=float)
+
+    for atom in atoms:
+        atom_id = int(atom[id_idx]) - 1
+        wstr[atom_id, 0] = float(atom[x_idx]) if x_idx is not None else 0
+        wstr[atom_id, 1] = float(atom[y_idx]) if y_idx is not None else 0
+        wstr[atom_id, 2] = float(atom[z_idx]) if z_idx is not None else 0
+        uwstr[atom_id, 0] = float(atom[xu_idx]) if xu_idx is not None else 0
+        uwstr[atom_id, 1] = float(atom[yu_idx]) if yu_idx is not None else 0
+        uwstr[atom_id, 2] = float(atom[zu_idx]) if zu_idx is not None else 0
+        v[atom_id, 0] = float(atom[vx_idx]) if vx_idx is not None else 0
+        v[atom_id, 1] = float(atom[vy_idx]) if vy_idx is not None else 0
+        v[atom_id, 2] = float(atom[vz_idx]) if vz_idx is not None else 0
+        f[atom_id, 0] = float(atom[fx_idx]) if fx_idx is not None else 0
+        f[atom_id, 1] = float(atom[fy_idx]) if fy_idx is not None else 0
+        f[atom_id, 2] = float(atom[fz_idx]) if fz_idx is not None else 0
+
+    return uwstr, wstr, np.array(cell), v, f
+
+
+def update_mol_from_dump(mol, dump_file, confId=0):
+    uwstr, wstr, cell, velocity, force = read_dump_last(dump_file)
+    for i in range(mol.GetNumAtoms()):
+        mol.GetConformer(confId).SetAtomPosition(
+            i, Geom.Point3D(uwstr[i, 0], uwstr[i, 1], uwstr[i, 2])
+        )
+        mol.GetAtomWithIdx(i).SetDoubleProp("vx", velocity[i, 0])
+        mol.GetAtomWithIdx(i).SetDoubleProp("vy", velocity[i, 1])
+        mol.GetAtomWithIdx(i).SetDoubleProp("vz", velocity[i, 2])
+
+    if hasattr(mol, "cell"):
+        setattr(
+            mol,
+            "cell",
+            utils.Cell(
+                cell[0, 1], cell[0, 0], cell[1, 1], cell[1, 0], cell[2, 1], cell[2, 0]
+            ),
+        )
+        new_mol = calc.mol_trans_in_cell(mol, confId=confId)
+        print("update mol from", dump_file)
+    else:
+        print("mol has no cell attribute")
+
+    return new_mol
+
 
 class Poly_Sol_EMD:
     def __init__(
@@ -251,7 +355,7 @@ class Poly_Sol_EMD:
         if data_file is None:
             data_file = os.path.join(mix_md_dir, "poly_sol_last.data")
         else:
-            data_file=data_file
+            data_file = data_file
         md = MD()
         md.cutoff_in = cutoff_in
         md.cutoff_out = cutoff_out
@@ -411,7 +515,7 @@ class SamplingMD(Poly_Sol_EMD):
         self.mpi = mpi
         self.omp = omp
         self.gpu = gpu
-        
+
     def exec(self, equilibrated_mix_mol):
         sampling_work_dir = os.path.join(self.work_dir, "sampling_md")
         os.makedirs(sampling_work_dir, exist_ok=True)
@@ -422,7 +526,9 @@ class SamplingMD(Poly_Sol_EMD):
         lmp_sampling.make_dat(
             equilibrated_mix_c, confId=0, file_name="equilibrated_mix_cell_ini.data"
         )
-        data_file_path = os.path.join(sampling_work_dir, "equilibrated_mix_cell_ini.data")
+        data_file_path = os.path.join(
+            sampling_work_dir, "equilibrated_mix_cell_ini.data"
+        )
         sampling_md = self.sampling(data_file=data_file_path)
         lmp_sampling.make_input(sampling_md)
         sampling_mix = lmp_sampling.run(
