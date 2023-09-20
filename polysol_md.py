@@ -1,6 +1,6 @@
 import os
 import cell_utils
-from radonpy.core import utils, poly
+from radonpy.core import utils, poly, calc
 from radonpy.sim.lammps import LAMMPS
 from radonpy.sim.lammps import MolFromLAMMPSdata
 from radonpy.sim.md import MD
@@ -8,6 +8,10 @@ from datetime import datetime
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from rdkit import Chem
+from rdkit import Geometry as Geom
+
+
 import py3Dmol
 
 
