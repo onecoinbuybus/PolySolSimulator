@@ -14,7 +14,7 @@ special_bonds amber
 pair_modify mix arithmetic
 neighbor 2.0 bin
 neigh_modify delay 0 every 1 check yes
-read_data init.data
+read_data sol_ini.data
 
 thermo_style custom step time temp press enthalpy etotal ke pe ebond eangle edihed eimp evdwl ecoul elong etail vol lx ly lz density pxx pyy pzz pxy pxz pyz
 thermo_modify flush yes
