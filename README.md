@@ -22,69 +22,71 @@ Firstly a file named "test_run" will be created.The solvent cell of actone will 
 
 ## Advanced Usage
 ### 1. Create monomer
-输入polymer smiles以及电荷种类，以下面步骤创建高分子单体:  
-1. **构象搜索**: 使用RDKit搜索分子的合适构象。
-2. **分子预处理**: 对分子进行预处理，建立trimer
-3. **电荷赋值**: 使用psi4对分子电荷（gasteiger, RESP, ESP, Mulliken, Lowdin）进行计算，提取trimer中间部分电荷，建立monomer
+Input the polymer smiles and charge type, then follow the steps below to create a polymer monomer:
+1.**Conformational search:** Use RDKit to search for appropriate conformations of the molecule.
+2.**Molecular preprocessing:** Preprocess the molecule and construct a trimer.
+3.**Charge assignment:** Use psi4 to calculate molecular charges (gasteiger, RESP, ESP, Mulliken, Lowdin) and extract the central part of the charge in the trimer to construct the monomer.
 
-可以通过以下命令创建monomer:
+
+Create monomer using following command:
 
 ```bash
 python mol_gen.py "*C(C*)c1ccccc1" -dir "test_run" -out "ps.json"
 ```
-下面是可用的命令以及描述:
-下面是可用的命令行参数及其描述：
-- `smiles`: polymer smiles字符串
-- `-dir`: 工作目录名
-- `-out`: 输出文件名，用于保存生成的分子JSON文件。
-- `-charge`: 电荷类型，默认为"RESP"。
+
 
 ### 2. Make solvent
-创建溶剂盒子并进行预平衡。可以指定溶剂分子，电荷以及密度。此过程包括以下步骤:  
-1. **构象搜索**: 使用RDKit搜索溶剂分子的合适构象。
-2. **电荷赋值**: 使用psi4对溶剂分子的电荷进行计算。
-3. **创建溶剂单元**: 根据指定的分子数量和密度，创建一个无定型或简单的溶剂单元。
-溶剂盒子可用以下命令创建：
+Create a solvent box and pre-equilibrate it. You can specify the solvent molecule, charge, and density. The process includes the following steps:
+
+1.Conformational search: Use RDKit to search for appropriate conformations of the solvent molecule.
+2.Charge assignment: Use psi4 to calculate charges for the solvent molecule.
+3.Construct solvent unit: Based on the specified molecular quantity and density, create an amorphous or simple solvent unit.
+4.The solvent box can be created with the following command:
+    
 ```bash
 python make_solvent.py ./config/make_sol.yaml "C1CCCCC1"
 ```
-下面是命令的具体描述
-- `config_file`: YAML配置文件路径，其中包括OMP线程数、MPI进程数、GPU使用量、内存、溶剂分子数量、密度和盒子类型等参数。
-- `solvent_smiles`: 溶剂分子的smiles
+
 ### 3. Execute Quick Molecular Dynamics 
 
-这个脚本用于制作高分子-溶剂混合盒子并进行模拟以及抽样计算。可以通过以下命令执行快速MD模拟:
+This script is used to create a polymer-solvent mixed box and carry out simulations as well as sampling calculations. You can perform a quick MD simulation using the following command:
 
 ```bash
 python quick_md.py poly30_ethanol 30 -in_monomer ps.json -in_esol ethanol.json
 ```
 
-下面是可用的命令行参数及其描述：
-- `main_work_path`: 主工作目录的路径。
-- `chain_length`: 聚合物的链长。
-- `-in_monomer`: 单体JSON文件的路径。
-- `-in_esol`: 平衡溶剂JSON文件的路径。
-- `-protocol`: 模拟协议，md1: 8步的压缩与解压缩。md2: 保持压力与温度进行模拟。默认为"md1"。  
-- `-min_dist_threshold`: 初始高分子与溶剂间的最小距离阈值，默认为10。
+## Available command-line parameters and their descriptions:
+
+- **main_work_path**: Path to the main working directory.
+- **chain_length**: Chain length of the polymer.
+- **-in_monomer**: Path to the monomer JSON file.
+- **-in_esol**: Path to the equilibrated solvent JSON file.
+- **-protocol**: Simulation protocol. 
+  - `md1`: 8-step compression and decompression. 
+  - `md2`: Simulation maintaining pressure and temperature. 
+  - Default is "md1".
+- **-min_dist_threshold**: Initial minimum distance threshold between the polymer and solvent, default is 10.
+
 
 ## Details of Simulation
 
 ### Step 1. Monomer preparation  
-使用三个重复链块的中间部分获得了部分电荷(RESP)并且创建了指定高分子单体的Mol文件。RESP使用psi4进行计算。单体使用RDKit的etkdgv2进行构象搜索和优化。之后使用Random Walk创建高分子单链用于模拟。
+The partial charges (RESP) were obtained using the middle section of three repeating chain blocks, and a Mol file of the specified polymer monomer was created. RESP calculations were performed with psi4. The monomer underwent conformational search and optimization using RDKit's etkdgv2. A polymer single chain for simulation was then created using Random Walk.
 
 ### Step 2. Equilibrate simulation of solvent  
-随机生成初始密度为 0.05g/cm³的溶剂盒子，里面放入1000个溶剂分子。使用NPT模拟令纯溶剂盒以2fs的时间步长均匀平衡2 ns。温度固定为300K，压力为1 atm。
+A solvent box with an initial density of 0.05g/cm³ was randomly generated, containing 1,000 solvent molecules. An NPT simulation was conducted to equilibrate the pure solvent box for 2 ns with a timestep of 2fs. The temperature was maintained at 300K, and the pressure at 1 atm.
 
 ### Step 3. Creation of initial mixture cell  
-将生成的单链polymer放入溶剂盒的中心，删除了与高分子重叠以及距离过近的溶剂分子。
+The generated single-chain polymer was placed at the center of the solvent box, and solvent molecules overlapping with the polymer or too close to it were removed.
 
 ### Step 4. Simulation of polymer-solvent system  
-固定高分子的端点原子，使用NPT模拟了2,000,000步的混合物系统，步长为5fs。温度固定为300K，这里使用了并且比较了两个方案:
-  - 方案1: 将压强升高到100atm之后解压到1atm。
-  - 方案2: 保持压强为1直到模拟结束。
+With the end atoms of the polymer fixed, an NPT simulation of the mixture system was performed for 2,000,000 steps with a timestep of 5fs. The temperature was maintained at 300K. Two scenarios were used and compared:
+  - Scenario 1: The pressure was increased to 100 atm and then decompressed to 1 atm.
+  - Scenario 2: The pressure was maintained at 1 atm until the end of the simulation.
 
 ### Step 5. Sampling  
-松开端点原子，以300K，压力为1 atm的条件以同样的时间步长模拟500,000步的NPT并进行各种性质的计算。
+Releasing the endpoint atoms, an NPT simulation was conducted for 500,000 steps with the same timestep under conditions of 300K and a pressure of 1 atm, and various properties were calculated.
+
 
 ## Result
 
